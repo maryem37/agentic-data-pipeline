@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f2">
+  <title>Data Agent — from question to data</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f7f2;
+      --ink: #19241f;
+      --muted: #66736c;
+      --line: #dfe5dd;
+      --green: #176b4a;
+      --green-dark: #104c37;
+      --lime: #d9f178;
+      --white: #fff;
+      --shadow: 0 18px 55px rgba(28, 55, 40, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    .wrap { width: min(1160px, calc(100% - 48px)); margin: 0 auto; }
+    header { height: 76px; display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+    .nav { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 750; letter-spacing: -.03em; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: var(--lime); background: var(--green-dark); font-size: 17px; }
+    .nav-links { display: flex; gap: 30px; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .nav-links a:hover { color: var(--green); }
+    .nav-label { padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+    .hero { padding: 78px 0 62px; display: grid; grid-template-columns: 1.08fr .92fr; align-items: center; gap: 70px; }
+    .eyebrow { display: inline-flex; gap: 9px; align-items: center; color: var(--green); text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 800; }
+    .eyebrow:before { content: ""; width: 22px; height: 2px; background: var(--green); }
+    h1 { margin: 19px 0 18px; max-width: 650px; font-size: clamp(42px, 6vw, 72px); line-height: .99; letter-spacing: -.065em; font-weight: 680; }
+    h1 span { color: var(--green); }
+    .hero-copy { max-width: 510px; color: var(--muted); font-size: 17px; line-height: 1.7; }
+    .actions { display: flex; align-items: center; gap: 12px; margin-top: 28px; }
+    .button { border: 0; display: inline-flex; align-items: center; gap: 9px; border-radius: 999px; padding: 13px 18px; cursor: pointer; font-size: 13px; font-weight: 750; transition: transform .2s, background .2s; }
+    .button:hover { transform: translateY(-2px); }
+    .button-primary { background: var(--green-dark); color: white; }
+    .button-primary:hover { background: var(--green); }
+    .button-secondary { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+    .hero-card { position: relative; padding: 27px; border-radius: 24px; background: #e9eee5; box-shadow: var(--shadow); overflow: hidden; }
+    .hero-card:after { content: ""; position: absolute; width: 230px; height: 230px; right: -100px; top: -110px; border: 1px solid rgba(23,107,74,.15); border-radius: 50%; box-shadow: 0 0 0 25px rgba(23,107,74,.035), 0 0 0 50px rgba(23,107,74,.03); }
+    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; position: relative; z-index: 1; }
+    .card-title { font-size: 13px; font-weight: 750; }
+    .live { display: flex; align-items: center; gap: 6px; color: var(--green); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .live:before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #58ad78; box-shadow: 0 0 0 4px rgba(88,173,120,.14); }
+    .mini-flow { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: center; gap: 5px; position: relative; z-index: 1; }
+    .mini-node { min-height: 93px; padding: 13px 10px; border-radius: 14px; background: rgba(255,255,255,.84); border: 1px solid rgba(25,36,31,.07); }
+    .mini-icon { font-size: 18px; }
+    .mini-node strong { display: block; margin-top: 8px; font-size: 11px; }
+    .mini-node small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .arrow { color: #91a197; text-align: center; }
+    .prompt { position: relative; z-index: 1; display: flex; align-items: center; gap: 9px; margin-top: 15px; padding: 12px 14px; border-radius: 12px; background: var(--green-dark); color: #eaf3eb; font-size: 11px; }
+    .prompt b { color: var(--lime); }
+    .stats { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, 1fr); padding: 21px 0; }
+    .stat { padding-left: 23px; border-left: 1px solid var(--line); }
+    .stat:first-child { padding-left: 0; border: 0; }
+    .stat strong { display: block; font-size: 14px; letter-spacing: -.02em; }
+    .stat span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .workbench-section { padding-top: 69px; }
+    .work-steps { display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr 24px 1fr; align-items: center; gap: 8px; margin: -8px 0 21px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 14px; background: #edf2ea; }
+    .work-steps div { display: grid; grid-template-columns: 25px 1fr; column-gap: 8px; align-items: center; }
+    .work-steps div > span { grid-row: 1 / 3; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; background: var(--green-dark); color: var(--lime); font-size: 9px; font-weight: 800; }
+    .work-steps strong { font-size: 10px; }
+    .work-steps small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .work-steps i { color: #92a096; font-size: 13px; font-style: normal; text-align: center; }
+    .workbench { display: grid; grid-template-columns: 1fr 1fr; background: white; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); }
+    .work-input, .work-output { padding: 23px; min-width: 0; }
+    .work-output { background: #f8faf7; border-left: 1px solid var(--line); }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; font-size: 12px; font-weight: 800; }
+    .panel-icon { display: inline-grid; place-items: center; width: 23px; height: 23px; margin-right: 6px; border-radius: 7px; background: #eaf3ec; color: var(--green); }
+    .output-icon { background: var(--green-dark); color: var(--lime); }
+    .input-hint { color: #89948d; font-size: 10px; font-weight: 600; }
+    .input-guidance { display: grid; gap: 6px; margin: 0 0 12px; padding: 11px 13px; border-radius: 10px; background: #f4f7f2; }
+    .input-guidance b { margin-bottom: 2px; color: #45584c; font-size: 10px; }
+    .input-guidance span { color: #758178; font-size: 9px; }
+    .input-guidance em { display: inline-block; min-width: 77px; color: var(--green); font-style: normal; font-weight: 800; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    #request-input { display: block; width: 100%; height: 135px; resize: vertical; padding: 14px; border: 1px solid var(--line); border-radius: 12px; outline: none; color: var(--ink); background: #fcfdfb; font-family: inherit; font-size: 13px; line-height: 1.65; }
+    #request-input:focus { border-color: #7eae91; box-shadow: 0 0 0 3px rgba(23,107,74,.09); }
+    #request-input::placeholder { color: #a1aaa4; }
+    .examples-label { margin: 15px 0 8px; color: var(--muted); font-size: 10px; font-weight: 750; }
+    .example-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+    .example-button { padding: 7px 9px; border: 1px solid var(--line); border-radius: 999px; background: white; color: #506058; cursor: pointer; font-size: 10px; }
+    .example-button:hover { border-color: #83a890; color: var(--green); }
+    .example-preview { margin-top: 12px; padding: 11px 13px; border: 1px solid #dfe8dc; border-radius: 11px; background: #f8faf6; }
+    .example-preview > span { color: #87938b; font-size: 8px; font-weight: 850; letter-spacing: .12em; }
+    .example-preview > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }
+    .example-preview b { color: var(--green); font-size: 10px; }
+    .example-preview code { color: #4e5e54; font-size: 9px; text-align: right; overflow-wrap: anywhere; }
+    .example-preview p { margin: 6px 0 0; color: #7b877f; font-size: 9px; line-height: 1.5; }
+    .run-row { display: flex; align-items: center; justify-content: space-between; margin-top: 19px; }
+    #request-count { color: #929c95; font-size: 10px; }
+    #run-button { padding: 11px 15px; }
+    #run-button:disabled { opacity: .6; cursor: wait; transform: none; }
+    .run-note { margin: 10px 0 0; color: #8a958d; font-size: 10px; line-height: 1.5; }
+    .run-note b { color: var(--green-dark); }
+    .setup-note { margin: 8px 0 0; color: #909a93; font-size: 9px; line-height: 1.6; }
+    .setup-note code { color: #52645a; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; background: #eef1ed; color: #627068; font-size: 9px; font-weight: 800; }
+    .status-pill i { width: 6px; height: 6px; border-radius: 50%; background: #929c95; }
+    .status-pill.running { background: #fff4d9; color: #8a640e; }
+    .status-pill.running i { background: #d9a62e; animation: pulse 1s infinite alternate; }
+    .status-pill.success { background: #e5f3e8; color: var(--green); }
+    .status-pill.success i { background: #4a9e68; }
+    .status-pill.error { background: #fae9e6; color: #a13a2e; }
+    .status-pill.error i { background: #c95547; }
+    @keyframes pulse { to { opacity: .35; } }
+    .output-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 1px 10px; border-bottom: 1px solid var(--line); }
+    .output-meta span { color: #8b968e; font-size: 9px; font-weight: 850; letter-spacing: .1em; }
+    .output-meta strong { color: var(--green); font-size: 11px; }
+    .result-guide { display: grid; gap: 4px; margin: 0 0 14px; padding: 11px 13px; border-left: 2px solid #83aa8e; background: #f1f6ef; }
+    .result-guide strong { color: #45584c; font-size: 10px; }
+    .result-guide span { color: #758178; font-size: 9px; line-height: 1.5; }
+    .output-box { min-height: 199px; max-height: 340px; overflow: auto; padding: 14px 1px 8px; color: #34443b; font: 11px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .error-details { margin-top: 12px; padding: 10px; border-radius: 8px; background: #f0f2ef; color: #637067; white-space: normal; }
+    .error-details summary { cursor: pointer; font-size: 10px; line-height: 1.5; }
+    .error-details pre { max-height: 220px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 9px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .empty-output { display: grid; place-items: center; align-content: center; min-height: 165px; text-align: center; white-space: normal; }
+    .empty-output span { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 9px; border-radius: 12px; background: #e8eee7; color: var(--green); font-size: 20px; }
+    .empty-output strong { color: #506058; font-size: 11px; }
+    .empty-output p { max-width: 230px; margin: 5px 0; color: #8b968e; font-size: 10px; line-height: 1.55; }
+    .copy-button { padding: 0; border: 0; background: none; color: var(--green); cursor: pointer; font-size: 10px; font-weight: 750; }
+    .copy-button:disabled { color: #adb5af; cursor: default; }
+    section { padding: 86px 0; }
+    .section-head { max-width: 630px; margin-bottom: 33px; }
+    .section-head h2 { margin: 12px 0 11px; font-size: clamp(30px, 4vw, 43px); line-height: 1.08; letter-spacing: -.05em; font-weight: 660; }
+    .section-head p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+    .pipeline-shell { border: 1px solid var(--line); background: var(--white); border-radius: 22px; padding: 23px; box-shadow: var(--shadow); }
+    .pipeline { display: grid; grid-template-columns: 1fr 35px 1.25fr 35px 1.25fr 35px 1fr; align-items: stretch; }
+    .step { border: 1px solid var(--line); border-radius: 15px; padding: 17px; background: #fbfcfa; cursor: pointer; text-align: left; transition: .2s; color: var(--ink); }
+    .step:hover, .step.active { border-color: #7eae91; background: #f0f7ef; transform: translateY(-2px); }
+    .step-num { color: #8a968e; font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+    .step-icon { display: block; margin: 16px 0 11px; font-size: 21px; }
+    .step strong { display: block; font-size: 13px; }
+    .step small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .step-arrow { display: grid; place-items: center; color: #93a097; font-size: 18px; }
+    .branch { grid-column: 3 / 6; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .branch-card { padding: 15px 17px; border-radius: 14px; border: 1px dashed #bfd0c2; background: #f8faf6; }
+    .branch-card strong { font-size: 12px; }
+    .branch-card span { color: var(--muted); font-size: 11px; line-height: 1.5; display: block; margin-top: 5px; }
+    .detail { display: flex; gap: 12px; align-items: flex-start; min-height: 43px; margin: 16px 2px 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .detail b { color: var(--green); white-space: nowrap; }
+    .why-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
+    .why-card { padding: 28px; min-height: 220px; border-radius: 20px; background: var(--green-dark); color: white; position: relative; overflow: hidden; }
+    .why-card:nth-child(2), .why-card:nth-child(3) { background: white; color: var(--ink); border: 1px solid var(--line); }
+    .why-card:nth-child(4) { background: var(--lime); color: var(--ink); }
+    .why-card .number { opacity: .55; font-size: 11px; font-weight: 800; letter-spacing: .1em; }
+    .why-card h3 { max-width: 300px; margin: 30px 0 9px; font-size: 22px; letter-spacing: -.04em; }
+    .why-card p { max-width: 385px; margin: 0; font-size: 12px; line-height: 1.7; opacity: .75; }
+    .use-section { background: #e9eee5; }
+    .use-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; }
+    .use-card { padding: 24px; background: white; border-radius: 17px; border: 1px solid rgba(25,36,31,.06); }
+    .use-card .label { color: var(--green); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    .use-card h3 { margin: 13px 0 8px; font-size: 17px; letter-spacing: -.03em; }
+    .use-card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .example { margin-top: 14px; padding: 11px 13px; border-radius: 9px; background: #f3f6f1; color: #40554a; font: 11px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .cta { padding: 33px; border-radius: 22px; background: var(--green-dark); color: white; display: flex; justify-content: space-between; align-items: center; gap: 30px; }
+    .cta h2 { margin: 0 0 8px; font-size: 26px; letter-spacing: -.04em; }
+    .cta p { max-width: 560px; margin: 0; color: #c6d8cd; font-size: 12px; line-height: 1.6; }
+    .cta .button { background: var(--lime); color: var(--green-dark); flex-shrink: 0; }
+    footer { padding: 25px 0 35px; color: var(--muted); font-size: 11px; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid var(--line); padding-top: 19px; }
+    @media (max-width: 800px) {
+      .hero { grid-template-columns: 1fr; gap: 35px; padding: 55px 0 43px; }
+      .hero-card { max-width: 600px; }
+      .workbench { grid-template-columns: 1fr; }
+      .work-output { border-left: 0; border-top: 1px solid var(--line); }
+      .work-steps { grid-template-columns: 1fr 18px 1fr; row-gap: 12px; }
+      .work-steps i:nth-of-type(2) { display: none; }
+      .pipeline { grid-template-columns: 1fr; gap: 8px; }
+      .step-arrow { transform: rotate(90deg); height: 20px; }
+      .branch { grid-column: 1; margin-top: 2px; }
+      .why-grid { grid-template-columns: 1fr 1fr; }
+      .nav-links { gap: 14px; }
+    }
+    @media (max-width: 560px) {
+      .wrap { width: min(100% - 30px, 1160px); }
+      header { height: 65px; }
+      .nav-links { display: none; }
+      .nav-label { font-size: 10px; }
+      .hero { padding-top: 44px; }
+      .hero-copy { font-size: 15px; }
+      .hero-card { padding: 19px; }
+      .work-input, .work-output { padding: 17px; }
+      .work-steps { padding: 12px; }
+      .work-steps small { font-size: 8px; }
+      .mini-flow { grid-template-columns: 1fr 15px 1fr 15px 1fr; gap: 2px; }
+      .mini-node { padding: 10px 7px; }
+      .mini-node strong { font-size: 10px; }
+      .mini-node small { font-size: 8px; }
+      .stats { grid-template-columns: 1fr; gap: 14px; }
+      .stat, .stat:first-child { padding: 0; border: 0; }
+      section { padding: 61px 0; }
+      .pipeline-shell { padding: 14px; }
+      .branch, .why-grid, .use-grid { grid-template-columns: 1fr; }
+      .cta { align-items: flex-start; flex-direction: column; padding: 25px; }
+      .footer-inner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="#top"><span class="brand-mark">⌁</span><span>Data Agent</span></a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#workbench">Run a task</a><a href="#pipeline">Pipeline</a><a href="#why">Why Data Agent</a><a href="#when">When to use it</a>
+      </nav>
+      <span class="nav-label">LangGraph · Groq · Python</span>
+    </div>
+  </header>
+
+  <main id="top">
+    <div class="wrap">
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <div class="eyebrow">Agentic data workbench</div>
+          <h1 id="hero-title">From a data question to <span>the next step.</span></h1>
+          <p class="hero-copy">Data Agent turns plain language requests into a focused workflow: ask a question about your database, or bring data in, transform it, and save it in the format you need.</p>
+          <div class="actions">
+            <a class="button button-primary" href="#workbench">Run a data task <span>↓</span></a>
+            <a class="button button-secondary" href="#when">See when to use it</a>
+          </div>
+        </div>
+        <div class="hero-card" aria-label="Illustration of the Data Agent pipeline">
+          <div class="card-top"><span class="card-title">One request, the right workflow</span><span class="live">Two specialist paths</span></div>
+          <div class="mini-flow">
+            <div class="mini-node"><span class="mini-icon">✳</span><strong>Your request</strong><small>Natural language</small></div>
+            <div class="arrow">→</div>
+            <div class="mini-node"><span class="mini-icon">⇢</span><strong>Data Agent</strong><small>Route by intent</small></div>
+            <div class="arrow">→</div>
+            <div class="mini-node"><span class="mini-icon">▤</span><strong>SQL or ETL</strong><small>Specialized tools</small></div>
+          </div>
+          <div class="prompt"><b>Try:</b><span>“Filter rides from last month and save them as CSV.”</span></div>
+        </div>
+      </section>
+      <section class="workbench-section" id="workbench">
+        <div class="section-head">
+          <div class="eyebrow">Try the real project</div>
+          <h2>Give it a data task. See what it returns.</h2>
+          <p>Skip the boilerplate and start with the outcome you need. The router chooses SQL for database questions or ETL for API and file work; the specialist runs its tools and returns the result here.</p>
+        </div>
+        <div class="work-steps" aria-label="How a workbench request is processed">
+          <div><span>01</span><strong>Describe</strong><small>Source + action + destination</small></div><i>→</i>
+          <div><span>02</span><strong>Route</strong><small>SQL analyst or ETL analyst</small></div><i>→</i>
+          <div><span>03</span><strong>Execute</strong><small>Database or Python tools</small></div><i>→</i>
+          <div><span>04</span><strong>Review</strong><small>Result, saved path, or error</small></div>
+        </div>
+        <div class="workbench">
+          <div class="work-input">
+            <div class="panel-heading"><span><span class="panel-icon">↳</span> 1 · Describe the task</span><span class="input-hint">One clear goal works best</span></div>
+            <div class="input-guidance"><b>Include these details</b><span><em>Source</em> API URL, file path, or database table</span><span><em>Action</em> filter, summarize, extract, or transform</span><span><em>Destination</em> output folder and format, when saving a file</span></div>
+            <label class="sr-only" for="request-input">Data request</label>
+            <textarea id="request-input" maxlength="4000" placeholder="Example: Read data/payments.csv, keep completed payments, and save the result to data/transform as Parquet."></textarea>
+            <div class="examples-label">Try an example</div>
+            <div class="example-buttons">
+              <button type="button" class="example-button" data-prompt="Extract the data from https://pokeapi.co/api/v2/pokemon and save it to data/extract in CSV format." data-route="ETL analyst" data-destination="data/extract/extracted_data.csv">Extract API → CSV</button>
+              <button type="button" class="example-button" data-prompt="Transform data/extract/extracted_data.csv. Keep rows where the name is bulbasaur and save the result to data/transform as CSV." data-route="ETL analyst" data-destination="data/transform/transformed_data.csv">Transform a CSV</button>
+              <button type="button" class="example-button" data-prompt="How many rides are in the rides table?" data-route="SQL analyst" data-destination="A count returned from PostgreSQL">Ask the database</button>
+            </div>
+            <div class="example-preview" aria-live="polite"><span>EXAMPLE OUTPUT</span><div><b id="example-route">ETL analyst</b><code id="example-destination">data/extract/extracted_data.csv</code></div><p id="example-description">The agent fetches the API response, writes a CSV, and reports the saved path and row count.</p></div>
+            <div class="run-row"><span id="request-count">0 / 4000</span><button id="run-button" class="button button-primary" type="button"><span>▶</span> Run pipeline</button></div>
+            <p class="run-note"><b>What this saves you:</b> no hand-written routing glue or one-off task script. The agent connects your request to the SQL or ETL tools already in this project.</p>
+            <p class="setup-note">To launch: run <code>python frontend/server.py</code> from the project root, then open <code>http://127.0.0.1:8765</code>. API requests need the configured Groq key. SQL requests also need PostgreSQL access. File paths are relative to the project root.</p>
+          </div>
+          <div class="work-output">
+            <div class="panel-heading"><span><span class="panel-icon output-icon">↗</span> 4 · Review the result</span><span id="run-status" class="status-pill"><i></i> Ready</span></div>
+            <div class="result-guide"><strong>What you’ll get</strong><span>The route selected, the agent’s response, and the output file path or error details when available.</span></div>
+            <div class="output-meta"><span>SELECTED WORKFLOW</span><strong id="route-output">Waiting for request</strong></div>
+            <div id="output-box" class="output-box" aria-live="polite"><div class="empty-output"><span>⌁</span><strong>Results show up here</strong><p>Run the example above to see the live route and tool response. ETL tasks report the saved file path; database tasks return query results.</p></div></div>
+            <button id="copy-output" class="copy-button" type="button" disabled>Copy output</button>
+          </div>
+        </div>
+      </section>
+      <div class="stats" aria-label="Project capabilities">
+        <div class="stat"><strong>Natural language in</strong><span>Describe the task in everyday language</span></div>
+        <div class="stat"><strong>Specialist agents</strong><span>SQL analysis and ETL workflows</span></div>
+        <div class="stat"><strong>Useful outputs</strong><span>Query results or files in common formats</span></div>
+      </div>
+
+      <section id="pipeline">
+        <div class="section-head">
+          <div class="eyebrow">How it works</div>
+          <h2>A clear route from request to result.</h2>
+          <p>The top-level agent identifies the kind of work and hands it to a specialist. Select a stage to see what happens there.</p>
+        </div>
+        <div class="pipeline-shell">
+          <div class="pipeline">
+            <button class="step active" data-title="1 · Ask" data-detail="Start with a goal in plain language. Include the source, what you want changed or analyzed, and the desired output when you know it."><span class="step-num">01 / INPUT</span><span class="step-icon">✳</span><strong>Ask</strong><small>Describe the data task</small></button>
+            <div class="step-arrow">→</div>
+            <button class="step" data-title="2 · Route" data-detail="The current router uses request terms to select the SQL or ETL path. Clear verbs such as extract, transform, query, and database help make the intent explicit."><span class="step-num">02 / ROUTING</span><span class="step-icon">⇢</span><strong>Route</strong><small>Choose a specialist workflow</small></button>
+            <div class="step-arrow">→</div>
+            <button class="step" data-title="3 · Work" data-detail="The SQL analyst works with PostgreSQL. The ETL analyst can fetch API data or read a supported file, apply a pandas transformation, and prepare the result."><span class="step-num">03 / EXECUTION</span><span class="step-icon">⚙</span><strong>Work</strong><small>SQL analysis or Python ETL</small></button>
+            <div class="step-arrow">→</div>
+            <button class="step" data-title="4 · Result" data-detail="SQL requests return query results. ETL requests save a file in the requested output folder as CSV, JSON, or Parquet and report the result."><span class="step-num">04 / OUTPUT</span><span class="step-icon">↗</span><strong>Deliver</strong><small>Results or a saved data file</small></button>
+            <div class="branch">
+              <div class="branch-card"><strong>SQL analyst · PostgreSQL</strong><span>Ask questions about tables, filter records, or summarize relational data.</span></div>
+              <div class="branch-card"><strong>ETL analyst · API and files</strong><span>Extract, transform with pandas, and save CSV, JSON, or Parquet.</span></div>
+            </div>
+          </div>
+          <div class="detail" aria-live="polite"><b id="detail-title">1 · Ask</b><span id="detail-copy">Start with a goal in plain language. Include the source, what you want changed or analyzed, and the desired output when you know it.</span></div>
+        </div>
+      </section>
+    </div>
+
+    <section id="why" style="background:#fff">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="eyebrow">Why this project</div>
+          <h2>Less time translating intent into operations.</h2>
+          <p>A learning project in agent orchestration that brings common data tasks behind one natural language entry point.</p>
+        </div>
+        <div class="why-grid">
+          <article class="why-card"><span class="number">01 / ONE ENTRY POINT</span><h3>Start with the goal, not the syntax.</h3><p>Describe the analysis or file operation you want. The agent selects a specialist path and connects your request to its tools.</p></article>
+          <article class="why-card"><span class="number">02 / MODULAR</span><h3>Separate responsibilities.</h3><p>SQL work and ETL work live in distinct agents, making the workflow easier to understand and extend.</p></article>
+          <article class="why-card"><span class="number">03 / PRACTICAL</span><h3>Move between data tasks.</h3><p>Query a PostgreSQL database or work with API and file data using familiar Python and pandas operations.</p></article>
+          <article class="why-card"><span class="number">04 / BUILT TO LEARN</span><h3>See agent workflows in action.</h3><p>Explore LangChain tools and LangGraph routing in a hands-on data engineering project.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="use-section" id="when">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="eyebrow">When to use it</div>
+          <h2>Choose the path that matches your task.</h2>
+          <p>Use Data Agent for focused database analysis and straightforward extract-transform-load work.</p>
+        </div>
+        <div class="use-grid">
+          <article class="use-card"><span class="label">Use SQL path</span><h3>When the data is already in PostgreSQL</h3><p>Ask for filters, counts, groupings, or comparisons across available database tables.</p><div class="example">“How many rides were completed by each vehicle type?”</div></article>
+          <article class="use-card"><span class="label">Use ETL path</span><h3>When you need to bring in or reshape data</h3><p>Extract from an API, transform a supported local file, and save the result as CSV, JSON, or Parquet.</p><div class="example">“Load this CSV, keep completed payments, and save the result as Parquet.”</div></article>
+          <article class="use-card"><span class="label">Good fit</span><h3>Repeatable, well-scoped tasks</h3><p>Give a clear source, a specific operation, and an output location or format to help the agent act precisely.</p><div class="example">“Fetch the Pokémon API results and save them to data/extract as CSV.”</div></article>
+          <article class="use-card"><span class="label">Plan first</span><h3>Tasks needing production controls</h3><p>Review generated queries and transformations before using them on sensitive or business-critical data. This project is a prototype and does not provide a production approval workflow.</p><div class="example">Start with sample data and a separate output folder.</div></article>
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap" style="padding:58px 0 70px">
+      <div class="cta"><div><h2>Make your next data task conversational.</h2><p>Describe what you need, keep the request focused, and let the SQL or ETL workflow take it from there.</p></div><a class="button" href="#top">Back to top ↑</a></div>
+    </div>
+  </main>
+  <footer><div class="wrap footer-inner"><span>Data Agent · Multi-agent data analysis project</span><span>Built with Python, LangGraph, LangChain, PostgreSQL, and Groq</span></div></footer>
+  <script>
+    const steps = document.querySelectorAll('.step');
+    const title = document.getElementById('detail-title');
+    const copy = document.getElementById('detail-copy');
+    steps.forEach((step) => step.addEventListener('click', () => {
+      steps.forEach((item) => item.classList.remove('active'));
+      step.classList.add('active');
+      title.textContent = step.dataset.title;
+      copy.textContent = step.dataset.detail;
+    }));
+
+    const requestInput = document.getElementById('request-input');
+    const runButton = document.getElementById('run-button');
+    const statusPill = document.getElementById('run-status');
+    const outputBox = document.getElementById('output-box');
+    const routeOutput = document.getElementById('route-output');
+    const copyButton = document.getElementById('copy-output');
+    document.querySelectorAll('.example-button').forEach((button) => {
+      button.addEventListener('click', () => {
+        requestInput.value = button.dataset.prompt;
+        requestInput.dispatchEvent(new Event('input'));
+        document.getElementById('example-route').textContent = button.dataset.route;
+        document.getElementById('example-destination').textContent = button.dataset.destination;
+        document.getElementById('example-description').textContent = button.dataset.route === 'SQL analyst'
+          ? 'The SQL analyst queries PostgreSQL and returns the count in the result panel.'
+          : button.textContent.includes('Transform')
+            ? 'The ETL analyst reads the input CSV, filters for bulbasaur, and writes a transformed CSV.'
+            : 'The ETL analyst fetches the API data, writes a CSV, and reports the saved path and row count.';
+        requestInput.focus();
+      });
+    });
+    requestInput.addEventListener('input', () => {
+      document.getElementById('request-count').textContent = `${requestInput.value.length} / 4000`;
+    });
+    function setStatus(label, state) {
+      statusPill.className = `status-pill ${state || ''}`;
+      statusPill.lastChild.textContent = ` ${label}`;
+    }
+    runButton.addEventListener('click', async () => {
+      const question = requestInput.value.trim();
+      if (!question) {
+        requestInput.focus();
+        setStatus('Add a request', 'error');
+        return;
+      }
+      runButton.disabled = true;
+      runButton.innerHTML = '<span>◌</span> Running…';
+      routeOutput.textContent = 'Routing request';
+      outputBox.textContent = 'The agent graph is working. This may take a little while while the model and data tools respond.';
+      copyButton.disabled = true;
+      setStatus('Running', 'running');
+      let technicalDetails = '';
+      try {
+        const response = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          technicalDetails = result.details || '';
+          throw new Error(result.error || 'The pipeline could not complete the request.');
+        }
+        routeOutput.textContent = result.route === 'etl' ? 'ETL analyst' : result.route === 'sql' ? 'SQL analyst' : result.route;
+        outputBox.textContent = result.output;
+        copyButton.disabled = false;
+        setStatus('Complete', 'success');
+      } catch (error) {
+        routeOutput.textContent = 'No result';
+        outputBox.textContent = error.message.includes('Failed to fetch')
+          ? 'Cannot reach the local workbench server. Start it from the project root with: python frontend/server.py'
+          : error.message;
+        if (technicalDetails) {
+          const disclosure = document.createElement('details');
+          disclosure.className = 'error-details';
+          const summary = document.createElement('summary');
+          summary.textContent = 'Show technical details';
+          const trace = document.createElement('pre');
+          trace.textContent = technicalDetails;
+          disclosure.append(summary, trace);
+          outputBox.appendChild(disclosure);
+        }
+        setStatus('Needs attention', 'error');
+      } finally {
+        runButton.disabled = false;
+        runButton.innerHTML = '<span>▶</span> Run pipeline';
+      }
+    });
+    copyButton.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(outputBox.textContent);
+      copyButton.textContent = 'Copied';
+      setTimeout(() => { copyButton.textContent = 'Copy output'; }, 1400);
+    });
+  </script>
+</body>
+</html>

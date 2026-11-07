@@ -132,6 +132,18 @@ DATABASE_URL=postgresql://username:password@localhost:5432/database_name
 
 Configure the required API credentials and database connection before running the application.
 
+### Run the local web workbench
+
+From the project root, start the frontend and local API server:
+
+```powershell
+.\.venv\Scripts\python.exe frontend\server.py
+```
+
+Then open <http://127.0.0.1:8765>. Enter a task in the input panel and choose **Run pipeline**. The page sends it to the same `data_agent` LangGraph used by `main.py` and displays the selected SQL or ETL route with the agent/tool response. Keep the server running while using the page; press `Ctrl+C` in the terminal to stop it.
+
+The server binds to localhost. ETL tasks may call an external API or read/write files; SQL tasks need the PostgreSQL setup and credentials used by this project.
+
 ## Project Structure
 
 ```text
