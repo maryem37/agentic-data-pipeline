@@ -37,6 +37,77 @@ def collect_text(value: Any) -> list[str]:
     return []
 
 
+def find_state(value: Any, required_keys: set[str]) -> dict[str, Any] | None:
+    """Find a nested graph state containing the requested fields."""
+    if isinstance(value, dict):
+        if required_keys.issubset(value):
+            return value
+        for item in value.values():
+            found = find_state(item, required_keys)
+            if found is not None:
+                return found
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            found = find_state(item, required_keys)
+            if found is not None:
+                return found
+    return None
+
+
+def collect_tool_results(value: Any) -> list[str]:
+    """Collect only tool responses from a nested LangGraph result."""
+    found: list[str] = []
+    if getattr(value, "type", None) == "tool":
+        content = getattr(value, "content", "")
+        if isinstance(content, str) and content.strip():
+            found.append(content.strip().split("\n\nPandas code executed:", 1)[0])
+    elif isinstance(value, dict):
+        for item in value.values():
+            found.extend(collect_tool_results(item))
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            found.extend(collect_tool_results(item))
+    return found
+
+
+def collect_final_answers(value: Any) -> list[str]:
+    """Collect final assistant messages, excluding tool-call messages."""
+    found: list[str] = []
+    if getattr(value, "type", None) == "ai" and not getattr(value, "tool_calls", None):
+        content = getattr(value, "content", "")
+        if isinstance(content, str) and content.strip():
+            found.append(content.strip())
+    elif isinstance(value, dict):
+        for item in value.values():
+            found.extend(collect_final_answers(item))
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            found.extend(collect_final_answers(item))
+    return found
+
+
+def build_pipeline_steps(question: str, route: str, messages: Any) -> list[dict[str, str]]:
+    steps = [{"title": "Request", "detail": question}]
+    if route == "sql":
+        sql_state = find_state(messages, {"sql_query", "sql_query_execution_result", "final_answer"})
+        steps.append({"title": "Routed to SQL analyst", "detail": "Using the PostgreSQL schema and query tools."})
+        if sql_state:
+            if sql_state.get("sql_query"):
+                steps.append({"title": "SQL generated", "detail": str(sql_state["sql_query"])})
+            if sql_state.get("sql_query_execution_result"):
+                steps.append({"title": "PostgreSQL result", "detail": str(sql_state["sql_query_execution_result"])})
+            if sql_state.get("final_answer"):
+                steps.append({"title": "Answer", "detail": str(sql_state["final_answer"])})
+    else:
+        steps.append({"title": "Routed to ETL analyst", "detail": "Using the API or file tools and pandas."})
+        for tool_result in collect_tool_results(messages):
+            steps.append({"title": "Tool result", "detail": tool_result})
+        answers = collect_final_answers(messages)
+        if answers:
+            steps.append({"title": "Answer", "detail": answers[-1]})
+    return steps
+
+
 class WorkbenchHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=str(FRONTEND_DIR), **kwargs)
@@ -66,19 +137,26 @@ class WorkbenchHandler(SimpleHTTPRequestHandler):
             })
             route = result.get("route_response", "unknown") if isinstance(result, dict) else "unknown"
             messages = result.get("messages", []) if isinstance(result, dict) else result
-            texts = collect_text(messages)
-            # Preserve order while removing repeated nested state content.
-            unique_texts = list(dict.fromkeys(text.strip() for text in texts if text.strip()))
+            steps = build_pipeline_steps(question, route, messages)
             self._send_json(200, {
                 "ok": True,
                 "route": route,
-                "output": "\n\n".join(unique_texts[-8:]) or "Pipeline completed without a text result.",
+                "steps": steps,
             })
         except Exception as exc:
             # This endpoint is bound to localhost; include the traceback so a
             # demo failure can be traced to its actual agent/tool call.
+            if exc.__class__.__name__ == "APIConnectionError":
+                message = (
+                    "Cannot reach Groq at api.groq.com. The local workbench is "
+                    "running, but this computer needs outbound HTTPS access. "
+                    "Check the internet connection, firewall, or corporate proxy, "
+                    "then restart the server and retry."
+                )
+            else:
+                message = f"Pipeline failed: {exc}"
             self._send_json(500, {
-                "error": f"Pipeline failed: {exc}",
+                "error": message,
                 "details": traceback.format_exc(),
             })
 

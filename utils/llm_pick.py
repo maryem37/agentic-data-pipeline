@@ -1,5 +1,11 @@
 import os
 from dotenv import load_dotenv
+
+# Python's SSL layer honors SSLKEYLOGFILE by writing TLS session secrets to
+# that path. It is unnecessary for this app and can break HTTPS clients when
+# the configured destination is inaccessible, so disable it in this process.
+os.environ.pop("SSLKEYLOGFILE", None)
+
 from langchain_groq import ChatGroq
 
 load_dotenv()

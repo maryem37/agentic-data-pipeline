@@ -8,7 +8,7 @@ from Models.schema import DataAgentSchema
 from langchain_core.messages import HumanMessage
 from langgraph.graph import StateGraph, START, END
 from agents.etl_agent import etl_analyst
-from agents.sql_analyst import sql_analyst
+from agents.sql_analyst import db as sql_database, sql_analyst
 
 
 llm = pick_llm("high")
@@ -63,13 +63,9 @@ def sql_node(state:DataAgentSchema):
     message = state.messages[-1].content
 
     input_schema = {
-        "messages": [],
-        "user_question": f"{message}",
-        "curated_ques": "",
-        "prompt_query_context": "",
-        "generated_sql_query": "",
-        "is_safe": "No",
-        "comments": "",
+        "question": message,
+        "database_schema": sql_database.schema_details("public"),
+        "sql_query": "",
         "sql_query_execution_result": "",
         "final_answer": ""
     }
@@ -107,14 +103,6 @@ data_agent_graph.add_conditional_edges("router_node", route_edge,
                                       })
 
 data_agent = data_agent_graph.compile()
-
-# Optional|
-from IPython.display import display, Image
-img = Image(data_agent.get_graph().draw_mermaid_png())
-with open("data_agent_graph.png", "wb") as f:
-    f.write(img.data)
-
-
 
 if __name__ == "__main__":
 

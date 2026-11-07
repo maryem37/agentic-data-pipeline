@@ -112,12 +112,20 @@
     .status-pill.error i { background: #c95547; }
     @keyframes pulse { to { opacity: .35; } }
     .output-meta { display: flex; align-items: center; justify-content: space-between; padding: 0 1px 10px; border-bottom: 1px solid var(--line); }
-    .output-meta span { color: #8b968e; font-size: 9px; font-weight: 850; letter-spacing: .1em; }
-    .output-meta strong { color: var(--green); font-size: 11px; }
+    .output-meta span { color: #66736c; font-size: 10px; font-weight: 850; letter-spacing: .1em; }
+    .output-meta strong { color: var(--green); font-size: 13px; }
     .result-guide { display: grid; gap: 4px; margin: 0 0 14px; padding: 11px 13px; border-left: 2px solid #83aa8e; background: #f1f6ef; }
     .result-guide strong { color: #45584c; font-size: 10px; }
     .result-guide span { color: #758178; font-size: 9px; line-height: 1.5; }
-    .output-box { min-height: 199px; max-height: 340px; overflow: auto; padding: 14px 1px 8px; color: #34443b; font: 11px/1.7 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .output-box { min-height: 199px; max-height: 440px; overflow: auto; padding: 14px 1px 8px; color: #263a2f; font-family: inherit; font-size: 13px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .trace-list { display: grid; gap: 9px; white-space: normal; }
+    .trace-item { display: grid; grid-template-columns: 25px 1fr; gap: 9px; align-items: start; }
+    .trace-number { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 8px; background: #e6efe5; color: var(--green); font-size: 10px; font-weight: 850; }
+    .trace-content { min-width: 0; padding: 2px 0 9px; border-bottom: 1px solid #e8ece6; }
+    .trace-content strong { display: block; margin-bottom: 5px; color: #203e2e; font-size: 13px; font-weight: 750; line-height: 1.45; }
+    .trace-detail { color: #34463b; font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+    .trace-detail strong { display: inline; color: #203e2e; font-size: inherit; }
+    .trace-code { margin: 6px 0 0; padding: 11px; border-radius: 8px; background: #edf1ec; color: #263a2f; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
     .error-details { margin-top: 12px; padding: 10px; border-radius: 8px; background: #f0f2ef; color: #637067; white-space: normal; }
     .error-details summary { cursor: pointer; font-size: 10px; line-height: 1.5; }
     .error-details pre { max-height: 220px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 9px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
@@ -256,15 +264,15 @@
             <div class="panel-heading"><span><span class="panel-icon">↳</span> 1 · Describe the task</span><span class="input-hint">One clear goal works best</span></div>
             <div class="input-guidance"><b>Include these details</b><span><em>Source</em> API URL, file path, or database table</span><span><em>Action</em> filter, summarize, extract, or transform</span><span><em>Destination</em> output folder and format, when saving a file</span></div>
             <label class="sr-only" for="request-input">Data request</label>
-            <textarea id="request-input" maxlength="4000" placeholder="Example: Read data/payments.csv, keep completed payments, and save the result to data/transform as Parquet."></textarea>
+            <textarea id="request-input" maxlength="4000">How many rides are in the rides table?</textarea>
             <div class="examples-label">Try an example</div>
             <div class="example-buttons">
               <button type="button" class="example-button" data-prompt="Extract the data from https://pokeapi.co/api/v2/pokemon and save it to data/extract in CSV format." data-route="ETL analyst" data-destination="data/extract/extracted_data.csv">Extract API → CSV</button>
               <button type="button" class="example-button" data-prompt="Transform data/extract/extracted_data.csv. Keep rows where the name is bulbasaur and save the result to data/transform as CSV." data-route="ETL analyst" data-destination="data/transform/transformed_data.csv">Transform a CSV</button>
-              <button type="button" class="example-button" data-prompt="How many rides are in the rides table?" data-route="SQL analyst" data-destination="A count returned from PostgreSQL">Ask the database</button>
+              <button type="button" class="example-button" data-prompt="How many rides are in the rides table?" data-route="SQL analyst" data-destination="SELECT COUNT(*) AS ride_count FROM rides;">Ask the database</button>
             </div>
-            <div class="example-preview" aria-live="polite"><span>EXAMPLE OUTPUT</span><div><b id="example-route">ETL analyst</b><code id="example-destination">data/extract/extracted_data.csv</code></div><p id="example-description">The agent fetches the API response, writes a CSV, and reports the saved path and row count.</p></div>
-            <div class="run-row"><span id="request-count">0 / 4000</span><button id="run-button" class="button button-primary" type="button"><span>▶</span> Run pipeline</button></div>
+            <div class="example-preview" aria-live="polite"><span>EXAMPLE PIPELINE RESULT · PREVIOUS RUN</span><div><b id="example-route">SQL analyst</b><code id="example-destination">SELECT COUNT(*) AS ride_count FROM rides;</code></div><p id="example-description">PostgreSQL returned 20,000 rides. On Run, the panel shows the request, chosen route, generated SQL, live query result, and final answer.</p></div>
+            <div class="run-row"><span id="request-count">38 / 4000</span><button id="run-button" class="button button-primary" type="button"><span>▶</span> Run pipeline</button></div>
             <p class="run-note"><b>What this saves you:</b> no hand-written routing glue or one-off task script. The agent connects your request to the SQL or ETL tools already in this project.</p>
             <p class="setup-note">To launch: run <code>python frontend/server.py</code> from the project root, then open <code>http://127.0.0.1:8765</code>. API requests need the configured Groq key. SQL requests also need PostgreSQL access. File paths are relative to the project root.</p>
           </div>
@@ -362,6 +370,7 @@
     const outputBox = document.getElementById('output-box');
     const routeOutput = document.getElementById('route-output');
     const copyButton = document.getElementById('copy-output');
+    let lastOutput = '';
     document.querySelectorAll('.example-button').forEach((button) => {
       button.addEventListener('click', () => {
         requestInput.value = button.dataset.prompt;
@@ -379,9 +388,54 @@
     requestInput.addEventListener('input', () => {
       document.getElementById('request-count').textContent = `${requestInput.value.length} / 4000`;
     });
+    requestInput.dispatchEvent(new Event('input'));
     function setStatus(label, state) {
       statusPill.className = `status-pill ${state || ''}`;
       statusPill.lastChild.textContent = ` ${label}`;
+    }
+    function appendFormattedText(element, text) {
+      const chunks = String(text).split(/(\*\*[^*]+\*\*)/g);
+      chunks.forEach((chunk) => {
+        if (chunk.startsWith('**') && chunk.endsWith('**')) {
+          const emphasis = document.createElement('strong');
+          emphasis.textContent = chunk.slice(2, -2);
+          element.appendChild(emphasis);
+        } else {
+          element.appendChild(document.createTextNode(chunk));
+        }
+      });
+    }
+    function renderPipeline(steps) {
+      outputBox.replaceChildren();
+      const list = document.createElement('div');
+      list.className = 'trace-list';
+      lastOutput = steps.map((step, index) => `${index + 1}. ${step.title}\n${step.detail}`).join('\n\n');
+      steps.forEach((step, index) => {
+        const item = document.createElement('div');
+        item.className = 'trace-item';
+        const number = document.createElement('span');
+        number.className = 'trace-number';
+        number.textContent = String(index + 1).padStart(2, '0');
+        const content = document.createElement('div');
+        content.className = 'trace-content';
+        const heading = document.createElement('strong');
+        heading.textContent = step.title;
+        content.appendChild(heading);
+        if (step.title === 'SQL generated') {
+          const code = document.createElement('pre');
+          code.className = 'trace-code';
+          code.textContent = step.detail;
+          content.appendChild(code);
+        } else {
+          const detail = document.createElement('div');
+          detail.className = 'trace-detail';
+          appendFormattedText(detail, step.detail);
+          content.appendChild(detail);
+        }
+        item.append(number, content);
+        list.appendChild(item);
+      });
+      outputBox.appendChild(list);
     }
     runButton.addEventListener('click', async () => {
       const question = requestInput.value.trim();
@@ -393,7 +447,8 @@
       runButton.disabled = true;
       runButton.innerHTML = '<span>◌</span> Running…';
       routeOutput.textContent = 'Routing request';
-      outputBox.textContent = 'The agent graph is working. This may take a little while while the model and data tools respond.';
+      lastOutput = 'The agent graph is working. This may take a little while while the model and data tools respond.';
+      outputBox.textContent = lastOutput;
       copyButton.disabled = true;
       setStatus('Running', 'running');
       let technicalDetails = '';
@@ -409,14 +464,15 @@
           throw new Error(result.error || 'The pipeline could not complete the request.');
         }
         routeOutput.textContent = result.route === 'etl' ? 'ETL analyst' : result.route === 'sql' ? 'SQL analyst' : result.route;
-        outputBox.textContent = result.output;
+        renderPipeline(result.steps || [{ title: 'Result', detail: result.output || 'Pipeline completed.' }]);
         copyButton.disabled = false;
         setStatus('Complete', 'success');
       } catch (error) {
         routeOutput.textContent = 'No result';
-        outputBox.textContent = error.message.includes('Failed to fetch')
+        lastOutput = error.message.includes('Failed to fetch')
           ? 'Cannot reach the local workbench server. Start it from the project root with: python frontend/server.py'
           : error.message;
+        outputBox.textContent = lastOutput;
         if (technicalDetails) {
           const disclosure = document.createElement('details');
           disclosure.className = 'error-details';
@@ -434,7 +490,7 @@
       }
     });
     copyButton.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(outputBox.textContent);
+      await navigator.clipboard.writeText(lastOutput);
       copyButton.textContent = 'Copied';
       setTimeout(() => { copyButton.textContent = 'Copy output'; }, 1400);
     });
